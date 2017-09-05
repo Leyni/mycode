@@ -2,6 +2,11 @@
     header('Content-type: text/html; charset=UTF8');
 
     $user = $_GET['user'];
+    if (isset($_GET['year'])) {
+        $req_year = $_GET['year'];
+    } else {
+        $req_year = date("Y");
+    }
 
     $start = -100;
     $count = -$start;
@@ -43,7 +48,7 @@
                 }
             }
 
-            if ($year === '2016') {
+            if ($year === $req_year) {
                 $lastest_array[] = array(
                     'title' => $item['book']['title'],
                     'score' => $item['rating']['value'],
@@ -54,7 +59,7 @@
     } while($start + $count < $total);
     
 
-    $html = '<html> <body> <table border="1"> <tr> <th>16年的读书清单</th> </tr> '; 
+    $html = "<html> <body> <table border=\"1\"> <tr> <th>${req_year}年的读书清单</th> </tr> "; 
     $html.= '<tr> <th>书名</th> <th>评分</th> <th>更新时间</th> ';
     foreach ($lastest_array as $book) {
         $html.= '<tr> <td>'.$book['title'].'</td> <td>'.$book['score'].'</td> <td>'.$book['time'].'</td> <tr>';

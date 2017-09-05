@@ -193,16 +193,17 @@ def downloadUrl(url, filename, timeout) :
 
 
 # main
+command = sys.argv[1]
+
 logging.basicConfig(level = logging.INFO,
     format = '%(asctime)s [line:%(lineno)d] %(levelname)s %(message)s',
     datefmt = '%Y-%m-%d %H:%M:%S',
-    filename = root_path + 'e621_parser.log',
+    filename = root_path + 'e621_' + command + '.log',
     filemode = 'a')
 
 # argv1 preview = get preview; download = download source file
 # argv2 start image id
 # argv3 end-limit image id
-command = sys.argv[1]
 
 if (command == 'preview') :
     if len(sys.argv) == 2 :
@@ -278,7 +279,7 @@ if (command == 'download') :
     logging.info('------------download start-----------')
 
     #get perview image info
-    files = os.listdir(root_path + 'preview')
+    files = os.listdir(root_path + 'done')
     files_cnt = len(files)
     cnt = 0
     for file in files:
@@ -309,7 +310,7 @@ if (command == 'download') :
             for item in detail_info.img_detail :
                 while (True) :
                     try:
-                        if not os.path.isfile(root_path + 'preview/' + file) :
+                        if not os.path.isfile(root_path + 'done/' + file) :
                             break
                         file_ext = os.path.splitext(item['src'])[1]
                         file_name = img_id + ' ' + re.sub(r'[^a-zA-Z0-9_ ]', '', item['title'])[:128] + file_ext
@@ -325,7 +326,7 @@ if (command == 'download') :
                         if (req.status_code == 200) :
                         #    with open(root_path + 'source/' + file_name, 'wb') as code :
                         #        code.write(req.content)
-                            os.remove(root_path + 'preview/' + file)
+                            os.remove(root_path + 'done/' + file)
                             break
                     except Exception, err:
                         logging.error('get url = %s failed!' % item['src'])
