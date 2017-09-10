@@ -14,7 +14,8 @@ err = None
 
 debug_value = {}
 
-root_path = '/Users/kongfanyang/Documents/Sync/Entertain/picture/'
+root_path = '/var/services/homes/leyni/CloudStation/Drive/Entertain/Picture'
+log_path = './'
 
 class ListPageInfo(SGMLParser) :
     def __init__(self):
@@ -198,7 +199,7 @@ command = sys.argv[1]
 logging.basicConfig(level = logging.INFO,
     format = '%(asctime)s [line:%(lineno)d] %(levelname)s %(message)s',
     datefmt = '%Y-%m-%d %H:%M:%S',
-    filename = root_path + 'e621_' + command + '.log',
+    filename = log_path + 'e621_' + command + '.log',
     filemode = 'a')
 
 # argv1 preview = get preview; download = download source file
@@ -207,7 +208,7 @@ logging.basicConfig(level = logging.INFO,
 
 if (command == 'preview') :
     if len(sys.argv) == 2 :
-        with open(root_path + 'process.dat') as f :
+        with open(log_path + 'process.dat') as f :
             end_id = f.readline()
 
         while (True) :
@@ -271,7 +272,7 @@ if (command == 'preview') :
             if (string.atoi(start_id) < string.atoi(end_id)) :
                 break
 
-    with open(root_path + 'process.dat', 'w') as code :
+    with open(log_path + 'process.dat', 'w') as code :
         code.write(save_id)
     logging.info('------------preview finish-----------')
 
