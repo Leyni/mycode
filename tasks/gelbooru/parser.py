@@ -57,7 +57,7 @@ class ListPageInfo(SGMLParser) :
             if key == 'alt' :
                 img_title = value
         if is_detail == 1:
-            self.img_detail.append({'src' : img_src, 'title' : img_title})
+            self.img_detail.append({'src' : 'https://gelbooru.com' + img_src, 'title' : img_title})
 
     def start_param(self, attrs) :
         img_src = ''
@@ -80,7 +80,7 @@ class ListPageInfo(SGMLParser) :
             if key == 'type' and value == 'video/webm' :
                 is_video = 1
             if key == 'src' :
-                img_src = value
+                img_src = 'https:' + value
 
         if is_video == 1:
             (filepath, tempfilename) = os.path.split(img_src);
@@ -326,7 +326,7 @@ if (command == 'download') :
                         if (file_ext == '.swf' or file_ext == '.git') :
                             timeout = 300
 
-                        req = downloadUrl(url='https://gelbooru.com' + item['src'], filename=root_path + 'source/' + file_name, timeout = timeout)
+                        req = downloadUrl(url=item['src'], filename=root_path + 'source/' + file_name, timeout = timeout)
                         #req = requests.get(item['src'], timeout = timeout)
                         if (req.status_code == 200) :
                         #    with open(root_path + 'source/' + file_name, 'wb') as code :
