@@ -28,6 +28,8 @@ class ListPageInfo(SGMLParser) :
         self.is_comic_name = 0
         self.is_pool = 0
         self.next_comic_url = ''
+        self.org_src = ''
+        self.tmp_src = ''
 
     def start_img(self, attrs) :
         img_id = ''
@@ -57,7 +59,7 @@ class ListPageInfo(SGMLParser) :
             if key == 'alt' :
                 img_title = value
         if is_detail == 1:
-            self.img_detail.append({'src' : 'https://gelbooru.com' + img_src, 'title' : img_title})
+            self.img_detail.append({'src' : 'https:' + self.org_src, 'title' : img_title})
 
     def start_param(self, attrs) :
         img_src = ''
@@ -94,6 +96,9 @@ class ListPageInfo(SGMLParser) :
             if key == 'href' and re.match(r'/post/show/\d+', value) != None and self.is_pool == 2:
                 self.next_comic_url = value
                 #self.is_comic_name = 3
+            if key == 'href' :
+                self.tmp_src = value
+
 
     def end_a(self) :
         if self.is_comic_name == 1 :
@@ -104,6 +109,8 @@ class ListPageInfo(SGMLParser) :
             self.comic_name += re.sub(r'[/]', '', data)
         if self.is_pool == 1 and '|' in data:
             self.is_pool = 2
+        if data == 'Original image' :
+            self.org_src = self.tmp_src
 
     def start_div(self, attrs) :
         for key, value in attrs :
