@@ -284,7 +284,7 @@ if (command == 'download') :
     logging.info('------------download start-----------')
 
     #get perview image info
-    files = os.listdir(root_path + 'done')
+    files = os.listdir(root_path + 'g_done')
     files_cnt = len(files)
     cnt = 0
     for file in files:
@@ -296,12 +296,12 @@ if (command == 'download') :
 
         if (file_ext == '.png' or file_ext == '.jpg' or file_ext == '.gif' or file_ext == '.swf' or file_ext == '.webm') :
 
-            url = 'https://e621.net/post/show/' + file_name[1:]
+            url = 'https://gelbooru.com/index.php?page=post&s=view&id=' + file_name
             logging.debug('download id = %s, url = %s' % (file_name, url))
 
             while (True) :
                 try :
-                    detail_page_content = getPageContent(url, 'e621.net', 'https://e621.net/')
+                    detail_page_content = getPageContent(url, 'gelbooru', 'https://www.gelbooru.com')
                     break
                 except Exception, err:
                     logging.error('get url = %s failed!' % url)
@@ -315,7 +315,7 @@ if (command == 'download') :
             for item in detail_info.img_detail :
                 while (True) :
                     try:
-                        if not os.path.isfile(root_path + 'done/' + file) :
+                        if not os.path.isfile(root_path + 'g_done/' + file) :
                             break
                         file_ext = os.path.splitext(item['src'])[1]
                         file_name = img_id + ' ' + re.sub(r'[^a-zA-Z0-9_ ]', '', item['title'])[:128] + file_ext
@@ -326,12 +326,12 @@ if (command == 'download') :
                         if (file_ext == '.swf' or file_ext == '.git') :
                             timeout = 300
 
-                        req = downloadUrl(url=item['src'], filename=root_path + 'source/' + file_name, timeout = timeout)
+                        req = downloadUrl(url='https://gelbooru.com' + item['src'], filename=root_path + 'source/' + file_name, timeout = timeout)
                         #req = requests.get(item['src'], timeout = timeout)
                         if (req.status_code == 200) :
                         #    with open(root_path + 'source/' + file_name, 'wb') as code :
                         #        code.write(req.content)
-                            os.remove(root_path + 'done/' + file)
+                            os.remove(root_path + 'g_done/' + file)
                             break
                     except Exception, err:
                         logging.error('get url = %s failed!' % item['src'])
