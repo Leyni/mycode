@@ -40,7 +40,7 @@ class ListPageInfo(SGMLParser) :
                 self.preview_cnt = self.preview_cnt  + 1
                 is_preview = 1
             if key == 'alt' :
-                img_id = value[6:]
+                img_id = value[6:].strip()
             if key == 'src' :
                 img_src = value
             if key == 'title' :
@@ -222,7 +222,7 @@ if (command == 'preview') :
 
         page_info = ListPageInfo()
         page_info.feed(list_page_content)
-        start_id = page_info.img_preview[0]['id'][1:]
+        start_id = page_info.img_preview[0]['id']
         logging.info('get start img id = %s end img id = %s' % (start_id, end_id))
     else :
         start_id = sys.argv[2]
@@ -233,7 +233,7 @@ if (command == 'preview') :
     save_id = start_id
 
     point_id = 0
-    print [start_id, point_id, pid]
+    print [start_id, end_id, point_id, pid]
     while (point_id <= pid):
         # parse list page
         while (True) :
