@@ -14,7 +14,7 @@ err = None
 
 debug_value = {}
 
-root_path = '/var/services/homes/leyni/CloudStation/Drive/Entertain/Picture'
+root_path = '/var/services/homes/leyni/CloudStation/Drive/Entertain/Picture/'
 log_path = './'
 
 class ListPageInfo(SGMLParser) :
@@ -169,7 +169,10 @@ def getPageContent(url, host, ref_url) :
         urllib2.install_opener(opener)
         req = urllib2.Request(url)
         opener.addheaders = heads.items()
-        page = opener.open(req, timeout = 30).read()
+        response = opener.open(req, timeout = 30)
+        page = response.read()
+        if (response.getcode() != 200) :
+            raise Exception(err)
         return page
     except Exception, err:
         logging.warning('get url = %s failed!' % url)
@@ -196,11 +199,11 @@ def downloadUrl(url, filename, timeout) :
 # main
 command = sys.argv[1]
 
-logging.basicConfig(level = logging.INFO,
+logging.basicConfig(level = logging.DEBUG,
     format = '%(asctime)s [line:%(lineno)d] %(levelname)s %(message)s',
     datefmt = '%Y-%m-%d %H:%M:%S',
     filename = log_path + 'e621_' + command + '.log',
-    filemode = 'a')
+    filemode = 'w')
 
 # argv1 preview = get preview; download = download source file
 # argv2 start image id
@@ -350,7 +353,7 @@ if (command == 'comic') :
             page_info = ListPageInfo()
             page_info.feed(page_content)
 
-            save_path = root_path + 'source/' + page_info.comic_name
+            save_path = root_path + 'source/ComicFurry/' + start_id + ' ' + page_info.comic_name
             if not os.path.isdir(save_path) :
                 logging.info('get comic name = %s' % (page_info.comic_name))
                 os.mkdir(save_path)

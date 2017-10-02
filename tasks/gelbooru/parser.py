@@ -15,7 +15,7 @@ err = None
 debug_value = {}
 
 #root_path = '/var/services/homes/leyni/CloudStation/Drive/Entertain/Picture'
-root_path = './'
+root_path = '/var/services/homes/leyni/CloudStation/Drive/Entertain/Picture/'
 log_path = './'
 
 class ListPageInfo(SGMLParser) :
@@ -34,20 +34,28 @@ class ListPageInfo(SGMLParser) :
     def start_img(self, attrs) :
         img_id = ''
         img_src = ''
+        img_data_src = ''
         img_title = ''
 
         is_preview = 0
+        is_lazy = 0
         for key, value in attrs :
-            if key == 'class' and value[0:7] == 'preview' :
+            if key == 'class' and value.find('preview') != -1 :
                 self.preview_cnt = self.preview_cnt  + 1
                 is_preview = 1
+                if value.find('lazyload') != -1: 
+                    is_lazy = 1
             if key == 'alt' :
                 img_id = value[6:].strip()
+            if key == 'data-src' :
+                img_data_src = value
             if key == 'src' :
                 img_src = value
             if key == 'title' :
                 img_title = value.split('\n')[0]
         if is_preview == 1:
+            if is_lazy == 1 :
+                img_src = img_data_src
             self.img_preview.append({'id' : img_id, 'src' : img_src, 'title' : img_title})
 
         is_detail = 0
@@ -59,7 +67,7 @@ class ListPageInfo(SGMLParser) :
             if key == 'alt' :
                 img_title = value
         if is_detail == 1:
-            self.img_detail.append({'src' : 'https:' + self.org_src, 'title' : img_title})
+            self.img_detail.append({'src' : self.org_src, 'title' : img_title})
 
     def start_param(self, attrs) :
         img_src = ''
@@ -82,7 +90,7 @@ class ListPageInfo(SGMLParser) :
             if key == 'type' and value == 'video/webm' :
                 is_video = 1
             if key == 'src' :
-                img_src = 'https:' + value
+                img_src = value
 
         if is_video == 1:
             (filepath, tempfilename) = os.path.split(img_src);
@@ -177,7 +185,10 @@ def getPageContent(url, host, ref_url) :
         urllib2.install_opener(opener)
         req = urllib2.Request(url)
         opener.addheaders = heads.items()
-        page = opener.open(req, timeout = 30).read()
+        response = opener.open(req, timeout = 15)
+        page = response.read()
+        if (response.getcode() != 200) :
+            raise Exception(err)
         return page
     except Exception, err:
         logging.warning('get url = %s failed!' % url)
@@ -242,6 +253,7 @@ if (command == 'preview') :
     point_id = 0
     print [start_id, end_id, point_id, pid]
     while (point_id <= pid):
+
         # parse list page
         while (True) :
             try :
@@ -266,7 +278,7 @@ if (command == 'preview') :
 
                     logging.debug('download %s' % (file_name))
 
-                    req = requests.get('https:' + item['src'], timeout = 10)
+                    req = requests.get(item['src'], timeout = 10)
                     with open(root_path + 'g_preview/' + file_name, 'wb') as code :
                         code.write(req.content)
 
@@ -325,7 +337,7 @@ if (command == 'download') :
                         if not os.path.isfile(root_path + 'g_done/' + file) :
                             break
                         file_ext = os.path.splitext(item['src'])[1]
-                        file_name = img_id + ' ' + re.sub(r'[^a-zA-Z0-9_ ]', '', item['title'])[:128] + file_ext
+                        file_name = 'gelbooru ' + img_id + ' ' + re.sub(r'[^a-zA-Z0-9_ ]', '', item['title'])[:128] + file_ext
 
                         logging.debug('download %s' % (file_name))
 
