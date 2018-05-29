@@ -1,6 +1,6 @@
 #!/bin/bash
 
-ROOT_PATH='/Users/kongfanyang/Documents/Sync/Entertain/picture/'
+ROOT_PATH='./'
 
 pid=$(cat ${ROOT_PATH}p_token)
 if [ $pid -ne 0 ] ;
