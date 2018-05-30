@@ -17,6 +17,7 @@ log_path = work_path + '/log'
 etc_path = work_path + '/etc'
 data_path = '/var/services/photo/'
 data_class = ['Furry', 'LoliTop', 'SecFurry', 'SecNormal', '东方同人', '其他', '初音', '动画', '同人', '游戏']
+res_path = '/usr/local/debian-chroot/var/chroottarget/home/mycode/picture_recommend/etc/'
 
 logging.basicConfig(level = logging.DEBUG,
     format = '%(asctime)s [line:%(lineno)d] %(levelname)s %(message)s',
@@ -25,7 +26,17 @@ logging.basicConfig(level = logging.DEBUG,
     filemode = 'w')
 # config end
 
-for cls in data_class :
-    file_list = [re.match(r'i(\d*) .*', x).group(1) for x in os.listdir(data_path + '/' + cls) if re.match(r'i\d* .*', x) != None]
-    if file_list :
-        print file_list[0]
+
+command = sys.argv[1]
+if command == 'fetch':
+    with open(res_path + '/label_id_list.txt', 'a') as code :
+        for cls in data_class :
+            for x in os.listdir(data_path + '/' + cls):
+                pat = re.match(r'i(\d*) .*', x)
+                if pat != None:
+                    code.write(pat.group(1) + '\n')
+    code.close()
+
+if command == 'flush':
+# foreach item in file
+# update label and label_status
