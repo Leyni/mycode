@@ -27,6 +27,9 @@ class ListPageInfo(SGMLParser) :
         self.is_comic_name = 0
         self.is_pool = 0
         self.next_comic_url = ''
+        # deal with download
+        self.possible_img_src = ''
+        self.img_tilte = ''
 
     def start_img(self, attrs) :
         img_id = ''
@@ -56,7 +59,8 @@ class ListPageInfo(SGMLParser) :
             if key == 'alt' :
                 img_title = value
         if is_detail == 1:
-            self.img_detail.append({'src' : img_src, 'title' : img_title})
+            self.img_title = img_title
+            #self.img_detail.append({'src' : img_src, 'title' : img_title})
 
     def start_param(self, attrs) :
         img_src = ''
@@ -70,7 +74,8 @@ class ListPageInfo(SGMLParser) :
         if is_video == 1:
             (filepath, tempfilename) = os.path.split(img_src);
             (shotname, extension) = os.path.splitext(tempfilename);
-            self.img_detail.append({'src' : img_src, 'title' : shotname})
+            #self.img_detail.append({'src' : img_src, 'title' : shotname})
+            self.img_title = shotname
 
     def start_source(self, attrs) :
         img_src = ''
@@ -84,7 +89,8 @@ class ListPageInfo(SGMLParser) :
         if is_video == 1:
             (filepath, tempfilename) = os.path.split(img_src);
             (shotname, extension) = os.path.splitext(tempfilename);
-            self.img_detail.append({'src' : img_src, 'title' : shotname})
+            #self.img_detail.append({'src' : img_src, 'title' : shotname})
+            self.img_title = shotname
 
     def start_a(self, attrs) :
         for key, value in attrs :
@@ -93,6 +99,8 @@ class ListPageInfo(SGMLParser) :
             if key == 'href' and re.match(r'/post/show/\d+', value) != None and self.is_pool == 2:
                 self.next_comic_url = value
                 #self.is_comic_name = 3
+            if key == 'href' :
+                self.possible_img_src = value
 
     def end_a(self) :
         if self.is_comic_name == 1 :
@@ -103,6 +111,8 @@ class ListPageInfo(SGMLParser) :
             self.comic_name += re.sub(r'[/]', '', data)
         if self.is_pool == 1 and '|' in data:
             self.is_pool = 2
+        if data == 'Full Size' or (data == 'Download' and 'swf' in self.possible_img_src ):
+            self.img_detail.append({'src' : self.possible_img_src, 'title' : self.img_title})
 
     def start_div(self, attrs) :
         for key, value in attrs :
@@ -163,7 +173,7 @@ def getPageContent(url, host, ref_url) :
             'Host':host,
             'Keep-Alive':'120',
             'Referer':ref_url,
-            'User-Agent':'Mozilla/5.0 (X11; U; Linux x86_64; zh-CN; rv:1.9.2.14) Gecko/20110221 Ubuntu/10.10 (maverick) Firefox/3.6.14'}
+            'User-Agent':'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/34.0.1847.137 Safari/537.36 LBBROWSER'}
 
         opener = urllib2.build_opener(urllib2.HTTPCookieProcessor())
         urllib2.install_opener(opener)
@@ -305,7 +315,8 @@ if (command == 'download') :
                 except Exception, err:
                     logging.error('get url = %s failed!' % url)
                     time.sleep(1)
-                    #raise Exception(err)
+                    # TODO
+                    raise Exception(err)
 
             detail_info = ListPageInfo()
             detail_info.feed(detail_page_content)

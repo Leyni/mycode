@@ -35,6 +35,7 @@ class ListPageInfo(SGMLParser) :
         img_id = ''
         img_src = ''
         img_data_src = ''
+        img_data_original = ''
         img_title = ''
 
         is_preview = 0
@@ -49,13 +50,18 @@ class ListPageInfo(SGMLParser) :
                 img_id = value[6:].strip()
             if key == 'data-src' :
                 img_data_src = value
+            if key == 'data-original' :
+                img_data_original = value
             if key == 'src' :
                 img_src = value
             if key == 'title' :
                 img_title = value.split('\n')[0]
         if is_preview == 1:
             if is_lazy == 1 :
-                img_src = img_data_src
+                if (img_data_src != '') :
+                    img_src = img_data_src
+                elif (img_data_original != '') :
+                    img_src = img_data_original
             self.img_preview.append({'id' : img_id, 'src' : img_src, 'title' : img_title})
 
         is_detail = 0
@@ -185,7 +191,7 @@ def getPageContent(url, host, ref_url) :
         urllib2.install_opener(opener)
         req = urllib2.Request(url)
         opener.addheaders = heads.items()
-        response = opener.open(req, timeout = 15)
+        response = opener.open(req, timeout = 30)
         page = response.read()
         if (response.getcode() != 200) :
             raise Exception(err)
