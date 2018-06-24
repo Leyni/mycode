@@ -1,6 +1,6 @@
 #!/bin/bash
 
-ROOT_PATH='/Users/kongfanyang/Documents/Sync/Entertain/picture/'
+ROOT_PATH='./'
 
 pid=$(cat ${ROOT_PATH}p_token)
 if [ $pid -ne 0 ] ;
@@ -10,7 +10,7 @@ fi
 
 echo $$ > ${ROOT_PATH}p_token
 
-python e621_parser.py preview
+python parser.py preview
 #tail -f ${ROOT_PATH}e621_parser.log
 
 echo '0' > ${ROOT_PATH}p_token
