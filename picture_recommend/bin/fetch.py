@@ -7,6 +7,8 @@ import os
 import string
 import re
 import time
+import json
+import MySQLdb
 from contextlib import closing
 from sgmllib import SGMLParser
 
@@ -15,15 +17,10 @@ err = None
 debug_value = {}
 
 # config
-work_path = '/var/services/web/mycode/picture_recommend/'
+work_path = '/home/mycode/picture_recommend/'
 log_path = work_path + '/log'
 etc_path = work_path + '/etc'
 
-logging.basicConfig(level = logging.DEBUG,
-    format = '%(asctime)s [line:%(lineno)d] %(levelname)s %(message)s',
-    datefmt = '%Y-%m-%d %H:%M:%S',
-    filename = log_path + '/fetch.log',
-    filemode = 'w')
 # config end
 
 
@@ -127,7 +124,7 @@ class ListPageInfo(SGMLParser) :
         if data == 'Full Size' or (data == 'Download' and 'swf' in self.possible_img_src ):
             self.img_detail.append({'src' : self.possible_img_src, 'title' : self.img_title, 'tags' : self.tags})
         if self.is_tag == 1 :
-            self.tags.append(data)
+            self.tags.append(data.replace('\'', ''))
 
     def start_div(self, attrs) :
         for key, value in attrs :
@@ -218,63 +215,99 @@ def parse_detail_page(pid):
         except Exception, err:
             logging.error('get url = %s failed!' % url)
             time.sleep(1)
-            # TODO
-            raise Exception(err)
+            #raise Exception(err)
 
     detail_info = ListPageInfo()
     detail_info.feed(detail_page_content)
     return detail_info
 
+logging.basicConfig(level = logging.DEBUG,
+    format = '%(asctime)s [line:%(lineno)d] %(levelname)s %(message)s',
+    datefmt = '%Y-%m-%d %H:%M:%S',
+    filename = log_path + '/fetch.log',
+    filemode = 'w')
 
 # main
-if len(sys.argv) == 1 :
-    start_id = get_pid_from_web('e621.net')
-    end_id = get_pid_from_file('fetch')
-    logging.info('get start img id = %s end img id = %s' % (start_id, end_id))
-else :
-    start_id = sys.argv[1]
-    end_id = sys.argv[2]
+try:
+    if len(sys.argv) == 1 :
+        start_id = get_pid_from_web('e621.net')
+        end_id = get_pid_from_file('fetch')
+        logging.info('get start img id = %s end img id = %s' % (start_id, end_id))
+    else :
+        start_id = sys.argv[1]
+        end_id = sys.argv[2]
 
-save_id = start_id
-while (string.atoi(start_id) > string.atoi(end_id)):
-    # parse list page
-    page_info = paser_post_page(start_id)
+    db = MySQLdb.connect("localhost", "leyni", "mina", "pic_rec", charset='utf8')
+    cursor = db.cursor()
 
-    if (len(page_info.img_preview) == 0) :
-        start_id = str(string.atoi(start_id) - 50)
-        continue
+    save_id = start_id
+    while (string.atoi(start_id) > string.atoi(end_id)):
+        # parse list page
+        t1 = time.time()
+        page_info = paser_post_page(start_id)
+        t2 = time.time()
 
-    for item in page_info.img_preview :
-        if (string.atoi(start_id) < string.atoi(end_id)) :
-            break
-        while (True) :
-            try:
-                # get source image info
-                file_ext = os.path.splitext(item['src'])[1]
-                img_id = item['id'][1:]
+        if (len(page_info.img_preview) == 0) :
+            start_id = str(string.atoi(start_id) - 50)
+            continue
 
-                if file_ext not in ['.png', '.jpg', '.gif', '.swf', '.webm']:
-                    break
-
-                detail_info = parse_detail_page(img_id)
-
-                for detail_item in detail_info.img_detail :
-                    try:
-                        print 'e621', img_id, file_ext, item['src'], detail_item['src'], detail_item['tags']
-                        logging.debug('fetch %s' % (item['id']))
-                        break
-                    except Exception, err:
-                        logging.error('insert img_id= %s failed!' % img_id)
-                        raise Exception(err)
-
-                start_id = img_id
-                logging.debug('current start_id = %s' % start_id)
-
+        for item in page_info.img_preview :
+            t3 = time.time()
+            if (string.atoi(start_id) < string.atoi(end_id)) :
                 break
-            except Exception, err:
-                logging.error('get url = %s failed!' % item['src'])
-                # TODO
-                raise Exception(err)
+            while (True) :
+                try:
+                    # get source image info
+                    file_ext = os.path.splitext(item['src'])[1]
+                    img_id = item['id'][1:]
+
+                    if file_ext not in ['.png', '.jpg', '.gif', '.swf', '.webm']:
+                        break
+
+                    detail_info = parse_detail_page(img_id)
+                    t4 = time.time()
+
+                    for detail_item in detail_info.img_detail :
+                        try:
+                            sql = "insert ignore into sample_set(source, pid, ptype, kw_lst, label, label_status, status, preview_url, source_url) \
+                                    values ('%s', %d, %d, '%s', %d, %d, %d, '%s', '%s') " % ( \
+                                    'e621.net',
+                                    string.atoi(img_id),
+                                    1 if file_ext in ['.png', '.jpg'] else 2,
+                                    json.dumps(detail_item['tags']),
+                                    0,
+                                    0,
+                                    0,
+                                    item['src'],
+                                    detail_item['src']
+                                    )
+
+                            #print 'e621', img_id, file_ext, item['src'], detail_item['src'], detail_item['tags']
+                            cursor.execute(sql)
+                            logging.debug('fetch %s' % (item['id']))
+                            break
+                        except Exception, err:
+                            logging.error('insert img_id= %s failed!' % img_id)
+                            raise Exception(err)
+
+                    t5 = time.time()
+                    start_id = img_id
+                    logging.debug('process = %f%% , current start_id = %s' % (
+                        100.0 - 100.0 *
+                        (1.0 + string.atoi(start_id) - string.atoi(end_id)) / (string.atoi(save_id) - string.atoi(end_id)),
+                        start_id
+                        ))
+
+                    break
+                except Exception, err:
+                    logging.error('get url = %s failed!' % item['src'])
+                    #raise Exception(err)
+            #print (t2 - t1) * 1000, (t4 - t3) * 1000, (t5 - t4) * 1000
+
+        db.commit()
+    db.close()
+except Exception, err:
+    raise Exception(err)
 
 save_pid_to_file('fetch', save_id)
 logging.info('------------fetch finish-----------')

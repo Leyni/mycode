@@ -6,13 +6,15 @@ import os
 import string
 import re
 import time
+import MySQLdb
 
 err = None
 
 debug_value = {}
 
 # config
-work_path = '/var/services/web/mycode/picture_recommend/'
+#work_path = '/var/services/web/mycode/picture_recommend/'
+work_path = '/home/mycode/picture_recommend/'
 log_path = work_path + '/log'
 etc_path = work_path + '/etc'
 data_path = '/var/services/photo/'
@@ -38,5 +40,13 @@ if command == 'fetch':
     code.close()
 
 if command == 'flush':
-# foreach item in file
-# update label and label_status
+    db = MySQLdb.connect("localhost", "leyni", "mina", "pic_rec", charset='utf8')
+    cursor = db.cursor()
+
+    with open(etc_path + '/label_id_list.txt', 'r') as f:
+        for l in f.readlines():
+            sql = "update pic_rec.sample_set set label = 1, label_status = 1 where pid = '%s'" % l.strip()
+            cursor.execute(sql)
+
+    db.commit()
+    db.close()
