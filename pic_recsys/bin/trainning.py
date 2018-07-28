@@ -1,7 +1,6 @@
 import sys
 import logging
 import json
-import MySQLdb
 from gensim.models import Word2Vec
 
 err = None
@@ -9,7 +8,7 @@ err = None
 debug_value = {}
 
 # config
-work_path = '/Users/kongfanyang/Develop/mycode/pic_recsys'
+work_path = '/home/kongfanyang/git/mycode/pic_recsys'
 log_path = work_path + '/log'
 etc_path = work_path + '/etc'
 # config end
@@ -20,25 +19,53 @@ logging.basicConfig(level = logging.DEBUG,
     filename = log_path + '/trainning.log',
     filemode = 'w')
 
-def get_kw_gen():
-    db = MySQLdb.connect("localhost", "leyni", "mina", "pic_rec", charset='utf8')
-    cursor = db.cursor()
+class KW(object):
+    def __iter__(self):
+        err_cnt = 0
+        err_pos_cnt = 0
+        f = open(etc_path + '/query_result.tsv', 'r')
+        l = f.readline()
+        l = f.readline()
+        while l:
+            cols = l.strip().split('\t')
+            label = cols[0]
+            try:
+                kws = json.loads(cols[1])
+                yield kws
+            except Exception, e:
+                err_cnt += 1
+                if cols[0] == 1: err_pos_cnt += 1
+                print cols
+            l = f.readline()
+        print err_cnt, err_pos_cnt
 
-    sql = 'select kw_lst from sample_e621_set where label_status = 1'
-    cursor.execute(sql)
+def tranning_word2vec_model():
+    kws = KW()
+    model = Word2Vec(kws, size=1000, window = 10)
+    model.save(etc_path + "/word_vec.model")
 
-    col = cursor.fetchone()
-    while col:
-        kws = json.loads(col[0].encode('utf8'))
-        yield kws
+def item2vec():
+    kws_vec = KW()
+    out_file = open(etc_path + '/data_vec.txt', 'w')
+    model = Word2Vec.load(etc_path + "/word_vec.model")
+    for kws in kws_vec:
+        item_vec = None
+        for kw in kws:
+            if item_vec is None:
+                try:
+                    item_vec = model[kw]
+                except:
+                    pass
+            else:
+                try:
+                    item_vec += model[kw]
+                except:
+                    pass
+        print item_vec
+        exit()
 
-    db.close()
+item2vec()
 
 # main
-try:
-     model = Word2Vec(get_kw_gen(), size=1000, window = 10)
-     model.save(etc_path + "/word_vec.model")
-except Exception, err:
-    raise Exception(err)
 
 logging.info('------------tranning finish-----------')
