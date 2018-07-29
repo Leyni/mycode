@@ -27,10 +27,13 @@ neg_dirs = ['delete']
 logging.basicConfig(level = logging.DEBUG,
     format = '%(asctime)s [line:%(lineno)d] %(levelname)s %(message)s',
     datefmt = '%Y-%m-%d %H:%M:%S',
-    filename = log_path + '/fetch.log',
+    filename = log_path + '/sync.log',
     filemode = 'w')
 
 try:
+    pos_num = 0
+    neg_num = 0
+
     db = MySQLdb.connect("localhost", "leyni", "mina", "pic_rec", charset='utf8')
     cursor = db.cursor()
 
@@ -42,6 +45,7 @@ try:
                 sql = 'update sample_e621_set set rec_status = 2, label = 1, label_status = 1 where pid = %d' % int(pid)
                 cursor.execute(sql)
                 shutil.move(dat_path + '/' + d + '/' + file_name, target_path + '/' + d)
+                pos_num += 1
         db.commit()
 
     for d in neg_dirs:
@@ -52,8 +56,11 @@ try:
                 sql = 'update sample_e621_set set rec_status = 2, label = 0, label_status = 1 where pid = %d' % int(pid)
                 cursor.execute(sql)
                 os.remove(dat_path + '/' + d + '/' + file_name)
+                neg_num += 1
         db.commit()
 
+    if neg_num and pos_num:
+        logging.info('sync statis pos = %d, neg = %d, Accuracy = %f' % (pos_num, neg_num, 1.0 * pos_num / (pos_num + neg_num)))
     db.close()
 
 except Exception, err:

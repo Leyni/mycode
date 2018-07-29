@@ -22,7 +22,7 @@ log_path = work_path + '/log'
 etc_path = work_path + '/etc'
 dat_path = work_path + '/dat'
 
-rec_num = 250
+rec_num = 1000
 
 # config end
 
@@ -108,17 +108,28 @@ try:
                 file_ext = os.path.splitext(surl)[1]
                 file_name = str(pid) + ' e621 ' + (' '.join(kw))[:128] + file_ext
 
+                logging.info("remmand %d items, getting pid = %d, url = %s" % (to_rec_num, pid, surl))
+
                 timeout = 60
                 if (file_ext == '.swf' or file_ext == '.git') :
                     timeout = 300
-                req = downloadUrl(url=surl, filename=dat_path + '/recommend/' + file_name, timeout = timeout)
+                file_full_path = dat_path + '/recommend/' + file_name
+                req = downloadUrl(url=surl, filename=file_full_path, timeout = timeout)
                 if (req.status_code == 200) :
                     sql = "update sample_e621_set set rec_status = 1 where pid = %d" % pid
                     cursor.execute(sql)
                     break
-            except Exception, err:
-                raise Exception(err)
+                if (req.status_code == 404) :
+                    sql = "update sample_e621_set set rec_status = 2, label_status = 4 where pid = %d" % pid
+                    cursor.execute(sql)
+                    os.remove(file_full_path)
+                    break
 
+            except Exception, err:
+                pass
+                #raise Exception(err)
+
+        to_rec_num -= 1
         db.commit()
     db.close()
 except Exception, err:
